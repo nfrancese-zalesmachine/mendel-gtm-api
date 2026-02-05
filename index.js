@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const Anthropic = require('@anthropic-ai/sdk');
 
-const { getPersonaContext, getValueProps, getEmailFramework, getICP } = require('./lib/context');
+const { getPersonaContext, getValueProps, getEmailFramework, getICP, getIndustrySnippets, listClients, clearCache } = require('./lib/context');
 const { buildEmailPrompt, buildResearchPrompt, buildScoringPrompt, buildCustomPrompt } = require('./lib/prompts');
 
 const app = express();
@@ -15,17 +15,45 @@ const anthropic = new Anthropic({
 });
 
 // Health check
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
+  const clients = await listClients();
   res.json({
     status: 'ok',
     service: 'Mendel GTM API',
+    version: '2.0.0',
+    database: process.env.SUPABASE_URL ? 'supabase' : 'json-fallback',
+    clients: clients.map(c => c.slug),
     endpoints: [
       'POST /api/generate-email',
       'POST /api/research-brief',
       'POST /api/score-lead',
-      'POST /api/generate (flexible - define tu propio output)'
+      'POST /api/generate (flexible)',
+      'GET /api/clients',
+      'POST /api/cache/clear'
     ]
   });
+});
+
+// ============================================
+// GET /api/clients
+// List available clients
+// ============================================
+app.get('/api/clients', async (req, res) => {
+  try {
+    const clients = await listClients();
+    res.json({ success: true, clients });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// POST /api/cache/clear
+// Clear context cache (after updating Supabase data)
+// ============================================
+app.post('/api/cache/clear', (req, res) => {
+  clearCache();
+  res.json({ success: true, message: 'Cache cleared' });
 });
 
 // ============================================
@@ -35,6 +63,7 @@ app.get('/', (req, res) => {
 app.post('/api/generate-email', async (req, res) => {
   try {
     const {
+      client,         // Client slug (default: 'mendel')
       persona,        // CFO, Controller, Tesorería, etc.
       country,        // MX, AR, CL, CO, PE
       industry,       // Retail, Logística, Tech, etc.
@@ -47,6 +76,8 @@ app.post('/api/generate-email', async (req, res) => {
       custom_fields,  // campos personalizados de Clay (opcional)
       ...extraFields  // cualquier otro campo se captura aquí
     } = req.body;
+
+    const clientSlug = client || 'mendel';
 
     // Validación básica
     if (!persona || !country || !company_name || !contact_name) {
@@ -67,6 +98,14 @@ app.post('/api/generate-email', async (req, res) => {
       ...extraFields
     };
 
+    // Fetch context from Supabase (async)
+    const [personaContext, valueProps, emailFramework, industrySnippets] = await Promise.all([
+      getPersonaContext(persona, clientSlug),
+      getValueProps(country, clientSlug),
+      getEmailFramework(clientSlug),
+      getIndustrySnippets(industry, clientSlug)
+    ]);
+
     const prompt = buildEmailPrompt({
       persona,
       country,
@@ -77,9 +116,10 @@ app.post('/api/generate-email', async (req, res) => {
       signals: allSignals,
       additional_context,
       custom_fields: Object.keys(allCustomFields).length > 0 ? allCustomFields : null,
-      personaContext: getPersonaContext(persona),
-      valueProps: getValueProps(country),
-      emailFramework: getEmailFramework()
+      personaContext,
+      valueProps,
+      emailFramework,
+      industrySnippets
     });
 
     const message = await anthropic.messages.create({
@@ -93,7 +133,7 @@ app.post('/api/generate-email', async (req, res) => {
     res.json({
       success: true,
       email,
-      metadata: { persona, country, industry, company_name }
+      metadata: { client: clientSlug, persona, country, industry, company_name }
     });
 
   } catch (error) {
@@ -109,6 +149,7 @@ app.post('/api/generate-email', async (req, res) => {
 app.post('/api/research-brief', async (req, res) => {
   try {
     const {
+      client,           // Client slug (default: 'mendel')
       company_name,
       country,
       industry,
@@ -119,11 +160,19 @@ app.post('/api/research-brief', async (req, res) => {
       key_contacts          // contactos identificados (opcional)
     } = req.body;
 
+    const clientSlug = client || 'mendel';
+
     if (!company_name || !country) {
       return res.status(400).json({
         error: 'Campos requeridos: company_name, country'
       });
     }
+
+    // Fetch context from Supabase (async)
+    const [valueProps, icp] = await Promise.all([
+      getValueProps(country, clientSlug),
+      getICP(clientSlug)
+    ]);
 
     const prompt = buildResearchPrompt({
       company_name,
@@ -134,8 +183,8 @@ app.post('/api/research-brief', async (req, res) => {
       recent_news,
       technologies,
       key_contacts,
-      valueProps: getValueProps(country),
-      icp: getICP()
+      valueProps,
+      icp
     });
 
     const message = await anthropic.messages.create({
@@ -149,7 +198,7 @@ app.post('/api/research-brief', async (req, res) => {
     res.json({
       success: true,
       brief,
-      metadata: { company_name, country, industry }
+      metadata: { client: clientSlug, company_name, country, industry }
     });
 
   } catch (error) {
@@ -165,6 +214,7 @@ app.post('/api/research-brief', async (req, res) => {
 app.post('/api/score-lead', async (req, res) => {
   try {
     const {
+      client,           // Client slug (default: 'mendel')
       company_name,
       country,
       industry,
@@ -176,11 +226,16 @@ app.post('/api/score-lead', async (req, res) => {
       signals               // señales detectadas (array)
     } = req.body;
 
+    const clientSlug = client || 'mendel';
+
     if (!company_name || !country || !company_size) {
       return res.status(400).json({
         error: 'Campos requeridos: company_name, country, company_size'
       });
     }
+
+    // Fetch ICP from Supabase (async)
+    const icp = await getICP(clientSlug);
 
     const prompt = buildScoringPrompt({
       company_name,
@@ -192,7 +247,7 @@ app.post('/api/score-lead', async (req, res) => {
       seniority,
       technologies,
       signals,
-      icp: getICP()
+      icp
     });
 
     const message = await anthropic.messages.create({
@@ -220,7 +275,7 @@ app.post('/api/score-lead', async (req, res) => {
     res.json({
       success: true,
       scoring,
-      metadata: { company_name, country, industry, company_size }
+      metadata: { client: clientSlug, company_name, country, industry, company_size }
     });
 
   } catch (error) {
@@ -236,6 +291,9 @@ app.post('/api/score-lead', async (req, res) => {
 app.post('/api/generate', async (req, res) => {
   try {
     const {
+      // Client
+      client,           // Client slug (default: 'mendel')
+
       // Contexto del prospecto
       persona,
       country,
@@ -257,6 +315,8 @@ app.post('/api/generate', async (req, res) => {
       ...extraFields
     } = req.body;
 
+    const clientSlug = client || 'mendel';
+
     // Validación
     if (!task) {
       return res.status(400).json({
@@ -277,6 +337,13 @@ app.post('/api/generate', async (req, res) => {
       ...extraFields
     };
 
+    // Fetch context from Supabase (async) - only if needed
+    const [personaContext, valueProps, icp] = await Promise.all([
+      persona ? getPersonaContext(persona, clientSlug) : Promise.resolve(null),
+      country ? getValueProps(country, clientSlug) : Promise.resolve(null),
+      getICP(clientSlug)
+    ]);
+
     const prompt = buildCustomPrompt({
       task,
       output_format: output_format || 'text',
@@ -290,9 +357,9 @@ app.post('/api/generate', async (req, res) => {
       signals: allSignals,
       additional_context,
       custom_fields: Object.keys(allCustomFields).length > 0 ? allCustomFields : null,
-      personaContext: persona ? getPersonaContext(persona) : null,
-      valueProps: country ? getValueProps(country) : null,
-      icp: getICP()
+      personaContext,
+      valueProps,
+      icp
     });
 
     const message = await anthropic.messages.create({
@@ -320,6 +387,7 @@ app.post('/api/generate', async (req, res) => {
       success: true,
       output: result,
       metadata: {
+        client: clientSlug,
         task,
         output_format: output_format || 'text',
         persona,
@@ -337,4 +405,5 @@ app.post('/api/generate', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Mendel GTM API running on port ${PORT}`);
+  console.log(`Database: ${process.env.SUPABASE_URL ? 'Supabase' : 'JSON fallback'}`);
 });

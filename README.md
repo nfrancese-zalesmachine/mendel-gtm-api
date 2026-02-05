@@ -1,11 +1,26 @@
-# Mendel GTM API
+# Mendel GTM API v2.0
 
-API para generar contenido GTM personalizado usando el contexto de Mendel. Diseñada para integrarse con Clay.com.
+API multi-tenant para generar contenido GTM personalizado usando Supabase como base de datos. Diseñada para integrarse con Clay.com.
+
+## Novedades v2.0
+
+- **Multi-tenant**: Soporte para múltiples clientes con su propio contexto GTM
+- **Supabase**: Base de datos en la nube para contexto dinámico
+- **Fallback**: Si Supabase no está configurado, usa archivos JSON locales
+- **Cache**: Cache de 5 minutos para optimizar performance
+
+---
 
 ## Endpoints
 
 ### `GET /`
-Health check. Devuelve status y lista de endpoints disponibles.
+Health check. Devuelve status, versión, y lista de clientes disponibles.
+
+### `GET /api/clients`
+Lista todos los clientes disponibles en la base de datos.
+
+### `POST /api/cache/clear`
+Limpia el cache de contexto (usar después de actualizar datos en Supabase).
 
 ### `POST /api/generate-email`
 Genera cold emails personalizados por persona, país e industria.
@@ -14,11 +29,16 @@ Genera cold emails personalizados por persona, país e industria.
 Genera research briefs de cuentas para el equipo de ventas.
 
 ### `POST /api/score-lead`
-Puntúa y califica leads según el ICP de Mendel.
+Puntúa y califica leads según el ICP del cliente.
+
+### `POST /api/generate`
+Endpoint flexible - define tu propio output con el parámetro `task`.
 
 ---
 
-## Setup Local
+## Setup Rápido (Sin Supabase)
+
+Si solo quieres usar Mendel como cliente, puedes correr sin Supabase:
 
 ```bash
 # Instalar dependencias
@@ -30,9 +50,52 @@ cp .env.example .env
 
 # Iniciar servidor
 npm start
+```
 
-# O en modo desarrollo (con auto-reload)
-npm run dev
+La API funcionará con los archivos JSON en `/context/` como fallback.
+
+---
+
+## Setup con Supabase (Multi-tenant)
+
+### 1. Crear proyecto en Supabase
+
+1. Ve a [supabase.com](https://supabase.com) y crea un proyecto
+2. Una vez creado, ve a **Settings > API**
+3. Copia:
+   - `Project URL` → `SUPABASE_URL`
+   - `service_role` key → `SUPABASE_SERVICE_KEY` (¡no uses la anon key!)
+
+### 2. Ejecutar migraciones
+
+En el SQL Editor de Supabase, ejecuta en orden:
+
+```sql
+-- 1. Primero el schema
+-- Contenido de supabase/schema.sql
+
+-- 2. Luego los datos de Mendel
+-- Contenido de supabase/seed-mendel.sql
+```
+
+### 3. Configurar variables de entorno
+
+```bash
+cp .env.example .env
+```
+
+Edita `.env`:
+```
+ANTHROPIC_API_KEY=sk-ant-xxxxx
+SUPABASE_URL=https://tu-proyecto.supabase.co
+SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIs...
+```
+
+### 4. Iniciar servidor
+
+```bash
+npm install
+npm start
 ```
 
 ---
@@ -41,23 +104,29 @@ npm run dev
 
 1. Crea cuenta en [railway.app](https://railway.app)
 2. Conecta tu repositorio de GitHub
-3. Agrega la variable de entorno `ANTHROPIC_API_KEY`
-4. Railway detecta automáticamente Node.js y hace deploy
-
-**URL resultante:** `https://tu-proyecto.up.railway.app`
+3. Agrega las variables de entorno:
+   - `ANTHROPIC_API_KEY`
+   - `SUPABASE_URL`
+   - `SUPABASE_SERVICE_KEY`
+4. Railway hace deploy automáticamente
 
 ---
 
 ## Integración con Clay
 
-### Configuración en Clay
+### Nuevo parámetro: `client`
 
-1. Crea una columna de tipo **"HTTP Request"**
-2. Configura:
-   - Method: `POST`
-   - URL: `https://tu-api.up.railway.app/api/generate-email`
-   - Headers: `Content-Type: application/json`
-   - Body: (ver ejemplos abajo)
+Todos los endpoints ahora aceptan un parámetro `client` para especificar qué cliente usar:
+
+```json
+{
+  "client": "mendel",  // Opcional, default: "mendel"
+  "persona": "CFO",
+  "country": "MX",
+  "company_name": "Empresa ABC",
+  "contact_name": "María"
+}
+```
 
 ### Ejemplo: Generar Cold Email
 
@@ -66,14 +135,15 @@ npm run dev
 **Body (JSON):**
 ```json
 {
-  "persona": "{{contact.title}}",
-  "country": "{{company.country_code}}",
-  "industry": "{{company.industry}}",
-  "company_name": "{{company.name}}",
-  "contact_name": "{{contact.first_name}}",
-  "company_size": "{{company.employee_count}}",
-  "signal": "{{company.recent_news}}",
-  "additional_context": "{{company.description}}"
+  "client": "mendel",
+  "persona": "/Title",
+  "country": "/Country Code",
+  "industry": "/Industry",
+  "company_name": "/Company Name",
+  "contact_name": "/First Name",
+  "company_size": "/Employee Count",
+  "signal": "/Recent News",
+  "additional_context": "/Company Description"
 }
 ```
 
@@ -84,223 +154,112 @@ npm run dev
 - `contact_name` - Nombre del contacto
 
 **Campos opcionales:**
+- `client` - Slug del cliente (default: "mendel")
 - `industry` - Retail, Logística, Tech, Manufactura, Servicios, Consumo, Food
 - `company_size` - Número de empleados
-- `signal` - Trigger detectado (string único)
-- `signals` - Array de triggers detectados (ver abajo)
-- `additional_context` - Info adicional del prospecto
-- `custom_fields` - Objeto con campos personalizados (ver abajo)
-- **Cualquier otro campo** - Se incluye automáticamente como contexto
+- `signal` / `signals` - Triggers detectados
+- `additional_context` - Info adicional
+- `custom_fields` - Campos personalizados
 
 ---
 
-### Múltiples Signals
+## Agregar un Nuevo Cliente
 
-Puedes enviar signals de dos formas:
+### 1. Insertar cliente en Supabase
 
-**Opción 1: String único**
-```json
-{
-  "signal": "Acaban de cerrar ronda Serie B"
-}
+```sql
+INSERT INTO clients (slug, name, description) VALUES
+('acme', 'ACME Corp', 'Software de gestión empresarial');
 ```
 
-**Opción 2: Array de signals**
-```json
-{
-  "signals": [
-    "Cerraron ronda Serie B de $50M",
-    "Expandiendo a Colombia",
-    "Contratando CFO"
-  ]
-}
+### 2. Agregar su contexto
+
+```sql
+-- Obtener el ID del cliente
+DO $$
+DECLARE
+  acme_id UUID;
+BEGIN
+  SELECT id INTO acme_id FROM clients WHERE slug = 'acme';
+
+  -- Insertar personas
+  INSERT INTO personas (client_id, slug, titles, role, pains, cares_about, questions)
+  VALUES (acme_id, 'CTO',
+    ARRAY['CTO', 'VP Engineering'],
+    'Decisor técnico',
+    ARRAY['Deuda técnica', 'Escalabilidad'],
+    ARRAY['Performance', 'Arquitectura'],
+    ARRAY['¿Cómo manejan la deuda técnica?']
+  );
+
+  -- Insertar países
+  INSERT INTO countries (client_id, code, name, specific_value_props)
+  VALUES (acme_id, 'MX', 'México', ARRAY['Soporte local 24/7', 'Integraciones mexicanas']);
+
+  -- Insertar global config
+  INSERT INTO global_config (client_id, core_value_props, reference_clients)
+  VALUES (acme_id,
+    ARRAY['Automatización de procesos', 'Integraciones nativas'],
+    ARRAY['Cliente 1', 'Cliente 2']
+  );
+
+  -- Insertar ICP
+  INSERT INTO icp_config (client_id, firmographics, qualifying_signals, scoring_criteria)
+  VALUES (acme_id,
+    '{"size": {"minimum": 100, "sweet_spot": "500-2000"}}'::jsonb,
+    '{"include": ["Usa SAP"], "exclude": ["<50 empleados"]}'::jsonb,
+    '{"company_size": {"100-499": 2, "500+": 5}}'::jsonb
+  );
+
+  -- Insertar email framework
+  INSERT INTO email_framework (client_id, principles, structure, dont_do)
+  VALUES (acme_id,
+    '{"tone": "Profesional pero cercano"}'::jsonb,
+    '{"max_words": 80, "cta": "¿Tienes 15 min?"}'::jsonb,
+    ARRAY['Ser muy técnico', 'Mencionar competidores']
+  );
+END $$;
 ```
 
-**Opción 3: Ambos (se combinan)**
-```json
-{
-  "signal": "{{company.funding_news}}",
-  "signals": ["{{company.expansion_signal}}", "{{company.hiring_signal}}"]
-}
+### 3. Limpiar cache
+
+```bash
+curl -X POST https://tu-api.railway.app/api/cache/clear
 ```
 
----
-
-### Campos Personalizados (custom_fields)
-
-Para agregar cualquier dato extra de Clay:
+### 4. Usar el nuevo cliente
 
 ```json
 {
-  "persona": "CFO",
+  "client": "acme",
+  "persona": "CTO",
   "country": "MX",
-  "company_name": "Empresa ABC",
-  "contact_name": "María",
-  "custom_fields": {
-    "linkedin_headline": "{{contact.linkedin_headline}}",
-    "years_in_role": "{{contact.years_in_position}}",
-    "company_growth": "{{company.growth_rate}}",
-    "tech_stack": "{{company.technologies}}",
-    "mutual_connections": "{{contact.shared_connections}}"
-  }
-}
-```
-
-**También puedes enviar campos extra directamente (sin `custom_fields`):**
-```json
-{
-  "persona": "CFO",
-  "country": "MX",
-  "company_name": "Empresa ABC",
-  "contact_name": "María",
-  "linkedin_headline": "{{contact.linkedin_headline}}",
-  "erp_detected": "{{company.erp}}",
-  "pain_detected": "{{company.pain_signal}}"
-}
-```
-
-Todos los campos no reconocidos se incluyen automáticamente como contexto para el email.
-
-**Respuesta:**
-```json
-{
-  "success": true,
-  "email": "Hola María,\n\nPor el tamaño de Grupo Lala...",
-  "metadata": {
-    "persona": "CFO",
-    "country": "MX",
-    "industry": "Consumo",
-    "company_name": "Grupo Lala"
-  }
+  "company_name": "TechCorp",
+  "contact_name": "Juan"
 }
 ```
 
 ---
 
-### Ejemplo: Research Brief
+## Schema de Base de Datos
 
-**URL:** `POST /api/research-brief`
+### Tablas principales
 
-**Body (JSON):**
-```json
-{
-  "company_name": "{{company.name}}",
-  "country": "{{company.country_code}}",
-  "industry": "{{company.industry}}",
-  "company_size": "{{company.employee_count}}",
-  "company_description": "{{company.description}}",
-  "recent_news": "{{company.news}}",
-  "technologies": "{{company.technologies}}",
-  "key_contacts": [
-    {"name": "{{contact.name}}", "title": "{{contact.title}}"}
-  ]
-}
+| Tabla | Descripción |
+|-------|-------------|
+| `clients` | Clientes/empresas usando la API |
+| `personas` | Buyer personas por cliente |
+| `countries` | Value props por país por cliente |
+| `industries` | Snippets de industria por cliente |
+| `global_config` | Config global por cliente |
+| `icp_config` | Criterios de ICP por cliente |
+| `email_framework` | Framework de email por cliente |
+
+### Vista útil
+
+```sql
+SELECT * FROM client_full_context WHERE client_slug = 'mendel';
 ```
-
-**Campos requeridos:**
-- `company_name`
-- `country`
-
-**Respuesta:**
-```json
-{
-  "success": true,
-  "brief": "## Resumen Ejecutivo\n\nGrupo Lala es...",
-  "metadata": {...}
-}
-```
-
----
-
-### Ejemplo: Lead Scoring
-
-**URL:** `POST /api/score-lead`
-
-**Body (JSON):**
-```json
-{
-  "company_name": "{{company.name}}",
-  "country": "{{company.country_code}}",
-  "industry": "{{company.industry}}",
-  "company_size": "{{company.employee_count}}",
-  "company_description": "{{company.description}}",
-  "persona": "{{contact.title}}",
-  "seniority": "{{contact.seniority}}",
-  "technologies": "{{company.technologies}}",
-  "signals": ["{{company.growth_signal}}", "{{company.funding_signal}}"]
-}
-```
-
-**Campos requeridos:**
-- `company_name`
-- `country`
-- `company_size`
-
-**Respuesta:**
-```json
-{
-  "success": true,
-  "scoring": {
-    "score": 85,
-    "tier": "A",
-    "fit_summary": "Excelente fit: empresa enterprise en México con alto volumen de gastos",
-    "scoring_breakdown": {
-      "company_size": 4,
-      "country": 5,
-      "industry": 5,
-      "erp": 3,
-      "field_teams": 3,
-      "signals": 2
-    },
-    "strengths": ["Tamaño enterprise", "México = recupero SAT"],
-    "weaknesses": ["Sin ERP detectado"],
-    "recommended_action": "contact_now",
-    "best_persona_to_contact": "CFO",
-    "reasoning": "..."
-  },
-  "metadata": {...}
-}
-```
-
----
-
-## Flujo Recomendado en Clay
-
-```
-1. Enrichment → Obtener datos de empresa/contacto
-2. Score Lead → POST /api/score-lead → Filtrar Tier A/B
-3. Research Brief → POST /api/research-brief → Contexto para SDR
-4. Generate Email → POST /api/generate-email → Email personalizado
-5. Outreach → Enviar via secuencia
-```
-
----
-
-## Value Props por País
-
-| País | Value Props Principales |
-|------|------------------------|
-| 🇲🇽 México | Recupero SAT (+30%), reducción no deducibles (70%), validación CFDI |
-| 🇦🇷 Argentina | Multi-moneda, control inflacionario, Banco CMF |
-| 🇨🇱 Chile | Multi-entidad, cumplimiento SII |
-| 🇨🇴 Colombia | Control, cumplimiento DIAN |
-| 🇵🇪 Perú | Control, integración ERP |
-
-**IMPORTANTE:** El recupero automático de facturas SAT es **exclusivo de México**. La API maneja esto automáticamente.
-
----
-
-## Personas Soportadas
-
-| Persona | Rol | Prioridad |
-|---------|-----|-----------|
-| CFO | Decisor final | Alta |
-| Controller | Champion operativo | Alta |
-| Tesorería | Control de tarjetas | Alta |
-| Contabilidad | Deducibilidad (MX) | Media |
-| FPA | Presupuestos | Media |
-| FinanzasOperativas | Rendiciones | Media |
-| TravelRRHH | Viajes (upsell) | Baja |
 
 ---
 
@@ -310,9 +269,11 @@ Todos los campos no reconocidos se incluyen automáticamente como contexto para 
 |-------|-------|----------|
 | 400 Bad Request | Campos requeridos faltantes | Verificar body del request |
 | 500 Internal Error | API key inválida o rate limit | Verificar ANTHROPIC_API_KEY |
+| "Client not found" | Slug de cliente no existe | Verificar que el cliente esté en Supabase |
+| "Using fallback" | Supabase no configurado | Agregar SUPABASE_URL y SUPABASE_SERVICE_KEY |
 
 ---
 
 ## Soporte
 
-Repositorio: [mendel-gtm-api](https://github.com/tu-usuario/mendel-gtm-api)
+Repositorio: [mendel-gtm-api](https://github.com/nfrancese-zalesmachine/mendel-gtm-api)
