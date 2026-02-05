@@ -19,7 +19,7 @@ const {
   getProductFeatures,
   getEmailTemplates
 } = require('./lib/context');
-const { buildEmailPrompt, buildResearchPrompt, buildScoringPrompt, buildCustomPrompt } = require('./lib/prompts');
+const { buildEmailPrompt, buildResearchPrompt, buildScoringPrompt, buildCustomPrompt, buildSnippetPrompt } = require('./lib/prompts');
 
 const app = express();
 app.use(cors());
@@ -35,7 +35,7 @@ app.get('/', async (req, res) => {
   res.json({
     status: 'ok',
     service: 'Mendel GTM API',
-    version: '2.2.0',
+    version: '2.3.0',
     database: process.env.SUPABASE_URL ? 'supabase' : 'json-fallback',
     clients: clients.map(c => c.slug),
     endpoints: [
@@ -43,6 +43,7 @@ app.get('/', async (req, res) => {
       'POST /api/research-brief',
       'POST /api/score-lead',
       'POST /api/generate (flexible)',
+      'POST /api/snippet',
       'GET /api/clients',
       'GET /api/playbook',
       'GET /api/features',
@@ -525,6 +526,97 @@ app.post('/api/generate', async (req, res) => {
 
   } catch (error) {
     console.error('Error in custom generate:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// POST /api/snippet
+// Genera snippets cortos (max 30 palabras) para insertar en cold emails
+// ============================================
+app.post('/api/snippet', async (req, res) => {
+  try {
+    const {
+      // Client
+      client,
+
+      // Tipo de snippet
+      snippet_type,    // standard (default), opener, signal_hook, case_study, cta, ps_line
+      task,            // Instrucción específica (opcional)
+
+      // Contexto del prospecto
+      persona,
+      country,
+      industry,
+      company_name,
+      contact_name,
+      company_size,
+      signal,
+      signals,
+      additional_context,
+      custom_fields,
+
+      ...extraFields
+    } = req.body;
+
+    const clientSlug = client || 'mendel';
+
+    // Combinar signals
+    const allSignals = [
+      ...(signal ? [signal] : []),
+      ...(Array.isArray(signals) ? signals : signals ? [signals] : [])
+    ].filter(s => s && s.trim());
+
+    // Combinar campos custom
+    const allCustomFields = {
+      ...(custom_fields || {}),
+      ...extraFields
+    };
+
+    // Fetch context from Supabase (async) - solo lo que necesitamos
+    const [personaContext, valueProps, industrySnippets, caseStudies, signalsData] = await Promise.all([
+      persona ? getPersonaContext(persona, clientSlug) : Promise.resolve(null),
+      country ? getValueProps(country, clientSlug) : Promise.resolve(null),
+      industry ? getIndustrySnippets(industry, clientSlug) : Promise.resolve(null),
+      getCaseStudies(clientSlug, industry),
+      allSignals.length > 0 ? getSignals(clientSlug) : Promise.resolve([])
+    ]);
+
+    const prompt = buildSnippetPrompt({
+      task,
+      snippet_type: snippet_type || 'standard',
+      persona,
+      country,
+      industry,
+      company_name,
+      contact_name,
+      company_size,
+      signals: allSignals,
+      additional_context,
+      custom_fields: Object.keys(allCustomFields).length > 0 ? allCustomFields : null,
+      personaContext,
+      valueProps,
+      industrySnippets,
+      caseStudies,
+      signalsData
+    });
+
+    const message = await anthropic.messages.create({
+      model: 'claude-3-5-haiku-20241022',
+      max_tokens: 150,  // Snippets son cortos
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    // Devolver solo el snippet en texto plano
+    const snippet = message.content[0].text.trim();
+
+    res.json({
+      success: true,
+      snippet
+    });
+
+  } catch (error) {
+    console.error('Error generating snippet:', error);
     res.status(500).json({ error: error.message });
   }
 });
