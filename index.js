@@ -3,7 +3,19 @@ const express = require('express');
 const cors = require('cors');
 const Anthropic = require('@anthropic-ai/sdk');
 
-const { getPersonaContext, getValueProps, getEmailFramework, getICP, getIndustrySnippets, listClients, clearCache } = require('./lib/context');
+const {
+  getPersonaContext,
+  getValueProps,
+  getEmailFramework,
+  getICP,
+  getIndustrySnippets,
+  listClients,
+  clearCache,
+  getCompetitors,
+  getObjections,
+  getCaseStudies,
+  getSignals
+} = require('./lib/context');
 const { buildEmailPrompt, buildResearchPrompt, buildScoringPrompt, buildCustomPrompt } = require('./lib/prompts');
 
 const app = express();
@@ -20,7 +32,7 @@ app.get('/', async (req, res) => {
   res.json({
     status: 'ok',
     service: 'Mendel GTM API',
-    version: '2.0.0',
+    version: '2.1.0',
     database: process.env.SUPABASE_URL ? 'supabase' : 'json-fallback',
     clients: clients.map(c => c.slug),
     endpoints: [
@@ -29,6 +41,10 @@ app.get('/', async (req, res) => {
       'POST /api/score-lead',
       'POST /api/generate (flexible)',
       'GET /api/clients',
+      'GET /api/competitors',
+      'GET /api/objections',
+      'GET /api/case-studies',
+      'GET /api/signals',
       'POST /api/cache/clear'
     ]
   });
@@ -54,6 +70,66 @@ app.get('/api/clients', async (req, res) => {
 app.post('/api/cache/clear', (req, res) => {
   clearCache();
   res.json({ success: true, message: 'Cache cleared' });
+});
+
+// ============================================
+// GET /api/competitors
+// Lista competidores y benchmark
+// ============================================
+app.get('/api/competitors', async (req, res) => {
+  try {
+    const { client, name } = req.query;
+    const clientSlug = client || 'mendel';
+    const competitors = await getCompetitors(clientSlug, name);
+    res.json({ success: true, client: clientSlug, competitors });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// GET /api/objections
+// Lista objeciones y cómo manejarlas
+// ============================================
+app.get('/api/objections', async (req, res) => {
+  try {
+    const { client, category } = req.query;
+    const clientSlug = client || 'mendel';
+    const objections = await getObjections(clientSlug, category);
+    res.json({ success: true, client: clientSlug, objections });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// GET /api/case-studies
+// Lista casos de éxito
+// ============================================
+app.get('/api/case-studies', async (req, res) => {
+  try {
+    const { client, industry } = req.query;
+    const clientSlug = client || 'mendel';
+    const caseStudies = await getCaseStudies(clientSlug, industry);
+    res.json({ success: true, client: clientSlug, case_studies: caseStudies });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// GET /api/signals
+// Lista señales de oportunidad (buying triggers)
+// ============================================
+app.get('/api/signals', async (req, res) => {
+  try {
+    const { client, category } = req.query;
+    const clientSlug = client || 'mendel';
+    const signals = await getSignals(clientSlug, category);
+    res.json({ success: true, client: clientSlug, signals });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // ============================================
