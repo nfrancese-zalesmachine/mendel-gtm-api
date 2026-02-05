@@ -40,8 +40,11 @@ app.post('/api/generate-email', async (req, res) => {
       company_name,
       contact_name,
       company_size,   // número de empleados (opcional)
-      signal,         // trigger detectado (opcional)
-      additional_context // info extra del prospecto (opcional)
+      signal,         // trigger detectado - string (opcional)
+      signals,        // triggers detectados - array (opcional)
+      additional_context, // info extra del prospecto (opcional)
+      custom_fields,  // campos personalizados de Clay (opcional)
+      ...extraFields  // cualquier otro campo se captura aquí
     } = req.body;
 
     // Validación básica
@@ -51,6 +54,18 @@ app.post('/api/generate-email', async (req, res) => {
       });
     }
 
+    // Combinar signals: soporta string, array, o ambos
+    const allSignals = [
+      ...(signal ? [signal] : []),
+      ...(Array.isArray(signals) ? signals : signals ? [signals] : [])
+    ].filter(s => s && s.trim());
+
+    // Combinar campos custom con cualquier campo extra no reconocido
+    const allCustomFields = {
+      ...(custom_fields || {}),
+      ...extraFields
+    };
+
     const prompt = buildEmailPrompt({
       persona,
       country,
@@ -58,8 +73,9 @@ app.post('/api/generate-email', async (req, res) => {
       company_name,
       contact_name,
       company_size,
-      signal,
+      signals: allSignals,
       additional_context,
+      custom_fields: Object.keys(allCustomFields).length > 0 ? allCustomFields : null,
       personaContext: getPersonaContext(persona),
       valueProps: getValueProps(country),
       emailFramework: getEmailFramework()

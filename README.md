@@ -86,8 +86,80 @@ npm run dev
 **Campos opcionales:**
 - `industry` - Retail, Logística, Tech, Manufactura, Servicios, Consumo, Food
 - `company_size` - Número de empleados
-- `signal` - Trigger detectado (funding, expansión, contratación)
+- `signal` - Trigger detectado (string único)
+- `signals` - Array de triggers detectados (ver abajo)
 - `additional_context` - Info adicional del prospecto
+- `custom_fields` - Objeto con campos personalizados (ver abajo)
+- **Cualquier otro campo** - Se incluye automáticamente como contexto
+
+---
+
+### Múltiples Signals
+
+Puedes enviar signals de dos formas:
+
+**Opción 1: String único**
+```json
+{
+  "signal": "Acaban de cerrar ronda Serie B"
+}
+```
+
+**Opción 2: Array de signals**
+```json
+{
+  "signals": [
+    "Cerraron ronda Serie B de $50M",
+    "Expandiendo a Colombia",
+    "Contratando CFO"
+  ]
+}
+```
+
+**Opción 3: Ambos (se combinan)**
+```json
+{
+  "signal": "{{company.funding_news}}",
+  "signals": ["{{company.expansion_signal}}", "{{company.hiring_signal}}"]
+}
+```
+
+---
+
+### Campos Personalizados (custom_fields)
+
+Para agregar cualquier dato extra de Clay:
+
+```json
+{
+  "persona": "CFO",
+  "country": "MX",
+  "company_name": "Empresa ABC",
+  "contact_name": "María",
+  "custom_fields": {
+    "linkedin_headline": "{{contact.linkedin_headline}}",
+    "years_in_role": "{{contact.years_in_position}}",
+    "company_growth": "{{company.growth_rate}}",
+    "tech_stack": "{{company.technologies}}",
+    "mutual_connections": "{{contact.shared_connections}}"
+  }
+}
+```
+
+**También puedes enviar campos extra directamente (sin `custom_fields`):**
+```json
+{
+  "persona": "CFO",
+  "country": "MX",
+  "company_name": "Empresa ABC",
+  "contact_name": "María",
+  "linkedin_headline": "{{contact.linkedin_headline}}",
+  "erp_detected": "{{company.erp}}",
+  "pain_detected": "{{company.pain_signal}}"
+}
+```
+
+Todos los campos no reconocidos se incluyen automáticamente como contexto para el email.
 
 **Respuesta:**
 ```json
