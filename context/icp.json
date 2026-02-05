@@ -1,0 +1,84 @@
+{
+  "firmographics": {
+    "size": {
+      "minimum": 500,
+      "sweet_spot": "1,000-5,000+",
+      "note": "200-500 puede funcionar pero les puede parecer caro"
+    },
+    "geography": {
+      "tier1": ["MX"],
+      "tier2": ["AR", "CO", "CL", "PE"]
+    },
+    "structure": ["Multi-location", "Distributed teams", "Field operations"]
+  },
+  "industries": {
+    "tier1_best_fit": [
+      {
+        "name": "Retail / E-commerce",
+        "reason": "Field teams, trade marketing, multiple locations"
+      },
+      {
+        "name": "Logistica / Distribucion",
+        "reason": "Drivers, route coordinators, fuel expenses"
+      },
+      {
+        "name": "Consumo Masivo",
+        "reason": "Field sales, promotions, activations"
+      },
+      {
+        "name": "Food & Beverage",
+        "reason": "Distribution, activations, multiple outlets"
+      }
+    ],
+    "tier2_good_fit": [
+      {
+        "name": "Tecnologia / SaaS",
+        "reason": "Distributed teams, SaaS subscriptions, travel"
+      },
+      {
+        "name": "Servicios Profesionales",
+        "reason": "Billable travel, client expenses"
+      },
+      {
+        "name": "Manufactura / Energia",
+        "reason": "Field operations, maintenance, multiple plants"
+      }
+    ]
+  },
+  "qualifying_signals": {
+    "include": [
+      "Alto volumen de gastos corporativos (viaticos, viajes, operaciones)",
+      "Multiples subsidiarias/ubicaciones delegando gasto a equipos de campo",
+      "Alta exposicion fiscal SAT/AFIP (impuestos altos, auditorias frecuentes)",
+      "ERP corporativo (SAP, Oracle, NetSuite, TOTVS)",
+      "Viajes de negocio frecuentes (equipos regionales, comerciales)"
+    ],
+    "exclude": [
+      "<200 empleados (costo no justifica)",
+      "Gobierno, ONGs, Bancos (complejidad de compliance)",
+      "Sin cultura de formalizacion de gastos",
+      "Contabilidad completamente tercerizada"
+    ]
+  },
+  "scoring_criteria": {
+    "company_size": {
+      "500-999": 2,
+      "1000-2999": 3,
+      "3000-4999": 4,
+      "5000+": 5
+    },
+    "country": {
+      "MX": 5,
+      "AR": 3,
+      "CO": 3,
+      "CL": 3,
+      "PE": 2
+    },
+    "industry_tier1": 5,
+    "industry_tier2": 3,
+    "has_erp": 3,
+    "has_field_teams": 3,
+    "growth_signal": 2,
+    "funding_signal": 2
+  }
+}

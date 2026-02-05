@@ -1,0 +1,98 @@
+{
+  "global": {
+    "core_value_props": [
+      "Visibilidad real-time de gastos vs sorpresas de fin de mes",
+      "Control de tarjetas con reglas por persona/area/horario",
+      "Enterprise-first (vs Clara/Jeeves que apuntan a SMBs)",
+      "Integracion ERP nativa con SAP, Oracle, NetSuite"
+    ],
+    "differentiators": {
+      "vs_clara": "Enfoque enterprise, compliance fiscal mas profundo",
+      "vs_jeeves": "Integracion local, partnership con SAP",
+      "vs_concur": "Tarjetas nativas + capa de compliance local",
+      "vs_banks": "Software-first, control en tiempo real"
+    },
+    "reference_clients": ["Mercado Libre", "FEMSA", "McDonald's", "Unilever", "Adecco"],
+    "features": {
+      "cards": "Tarjetas corporativas VISA fisicas y virtuales",
+      "control": "Politicas y presupuestos por area/proyecto",
+      "approvals": "Flujos de aprobacion configurables",
+      "erp": "Integracion con SAP, Oracle, NetSuite, TOTVS",
+      "reimbursements": "Reembolsos instantaneos en 24-72 hrs",
+      "travel": "Mendel Viajes - reservas con IA"
+    }
+  },
+  "MX": {
+    "country_name": "Mexico",
+    "specific_value_props": [
+      "30% mas recupero de facturas via validacion SAT con IA",
+      "70% reduccion de gastos no deducibles",
+      "Recuperacion automatica de facturas SAT",
+      "Validacion CFDI automatica"
+    ],
+    "unique_features": [
+      "Recupero automatico de facturas SAT",
+      "Validacion SAT integrada",
+      "Foto del ticket -> factura SAT automatica"
+    ],
+    "metrics": {
+      "invoice_recovery": "De 40-60% a 80-90% de facturas recuperadas",
+      "non_deductibles": "Reduccion del 70% en gastos no deducibles",
+      "close_time": "Cierre mensual de 2-3 semanas a 3-5 dias"
+    },
+    "pain_emphasis": "deducibilidad fiscal y recupero de facturas",
+    "compliance": "SAT / CFDI"
+  },
+  "AR": {
+    "country_name": "Argentina",
+    "specific_value_props": [
+      "Control de gastos multi-moneda (pesos/USD)",
+      "Visibilidad en contexto inflacionario",
+      "Tarjetas emitidas por Banco CMF",
+      "Integracion con sistemas locales (Finnegans)"
+    ],
+    "unique_features": [
+      "Manejo multi-moneda ARS/USD",
+      "Control en contexto de alta volatilidad"
+    ],
+    "pain_emphasis": "control en contexto inflacionario y multi-moneda",
+    "compliance": "AFIP",
+    "note": "NO hay recupero automatico de facturas tipo SAT"
+  },
+  "CL": {
+    "country_name": "Chile",
+    "specific_value_props": [
+      "Control de gastos multi-entidad",
+      "Tarjetas VISA corporativas",
+      "Cumplimiento fiscal local",
+      "Politicas regionalizadas"
+    ],
+    "pain_emphasis": "control multi-entidad y cumplimiento fiscal",
+    "compliance": "SII",
+    "note": "NO hay recupero automatico de facturas tipo SAT"
+  },
+  "CO": {
+    "country_name": "Colombia",
+    "specific_value_props": [
+      "Control de gastos multi-entidad",
+      "Tarjetas VISA corporativas",
+      "Cumplimiento fiscal local",
+      "Politicas personalizables"
+    ],
+    "pain_emphasis": "control y cumplimiento fiscal",
+    "compliance": "DIAN",
+    "note": "NO hay recupero automatico de facturas tipo SAT"
+  },
+  "PE": {
+    "country_name": "Peru",
+    "specific_value_props": [
+      "Control de gastos corporativos",
+      "Tarjetas VISA corporativas",
+      "Integracion ERP",
+      "Politicas personalizables"
+    ],
+    "pain_emphasis": "control y visibilidad de gastos",
+    "compliance": "SUNAT",
+    "note": "NO hay recupero automatico de facturas tipo SAT"
+  }
+}

@@ -1,0 +1,193 @@
+{
+  "CFO": {
+    "titles": ["CFO", "Director de Finanzas", "VP Finance", "Director Financiero"],
+    "role": "Decisor final",
+    "reports_to": "CEO / Board",
+    "pains": [
+      "No real-time visibility - encuentra overspending al cierre de mes",
+      "Gastos no deducibles - facturas faltantes o incorrectas cuestan impuestos",
+      "Riesgo de fraude - tarjetas compartidas, sin controles",
+      "Estrés de auditoría - procesos manuales crean gaps de compliance"
+    ],
+    "cares_about": [
+      "Visibilidad en tiempo real por área, proyecto, centro de costo",
+      "Deducibilidad - recuperar más facturas (MX)",
+      "Control preventivo antes del gasto",
+      "Eficiencia del equipo de finanzas"
+    ],
+    "questions": [
+      "Como manejan la visibilidad de gastos antes del cierre de mes?",
+      "Que porcentaje de sus gastos terminan siendo no deducibles? (MX)",
+      "Cuanto tiempo les toma el cierre mensual?"
+    ],
+    "objections": {
+      "Excel + tarjetas bancarias funcionan bien": "Funciona hasta que escalan; costos ocultos en horas, errores, no deducibles",
+      "La implementacion va a romper nuestro cierre": "Se integra con ERP, no lo reemplaza; partnership con SAP Concur lo valida",
+      "Es muy caro": "ROI de deducibilidad + ahorro de tiempo, payback <9 meses"
+    }
+  },
+  "Controller": {
+    "titles": ["Controller", "Contralor", "Finance Controller", "Gerente de Control de Gestion"],
+    "role": "Champion operativo",
+    "reports_to": "CFO",
+    "pains": [
+      "Horas en conciliacion manual - extractos vs Excel vs ERP = semanas",
+      "Errores en clasificaciones - centro de costo incorrecto, impuestos mal aplicados",
+      "Perseguir facturas - pedir comprobantes a empleados que no responden",
+      "Cierres de mes extensos - proceso reactivo, no proactivo"
+    ],
+    "cares_about": [
+      "Automatizacion - eliminar captura manual y doble trabajo",
+      "Precision - clasificacion correcta desde el origen",
+      "Velocidad de cierre - de semanas a dias",
+      "Auditorias tranquilas - todo documentado y trazable"
+    ],
+    "questions": [
+      "Cuantas horas al mes dedican a conciliacion de gastos?",
+      "Como manejan cuando un empleado no entrega su comprobante?",
+      "Que tan frecuentes son los errores de clasificacion?"
+    ],
+    "objections": {
+      "Va a ser dificil integrarlo con nuestro ERP": "Conectores nativos con SAP, Oracle, NetSuite; implementacion en 6-8 semanas",
+      "Mi equipo ya tiene su proceso": "Libera tiempo para trabajo de valor vs perseguir tickets",
+      "El cambio va a ser caotico": "Piloto controlado de 30 dias con un departamento"
+    }
+  },
+  "Tesoreria": {
+    "titles": ["Gerente de Tesoreria", "Tesorero", "Treasury Manager", "Cash Manager"],
+    "role": "Champion - control de tarjetas y pagos",
+    "reports_to": "CFO / Controller",
+    "pains": [
+      "Tarjetas sin controles - compartidas, sin reglas, dificil saber quien gasto que",
+      "Riesgo de fraude - uso inapropiado dificil de detectar hasta el cierre",
+      "Aprobaciones manuales lentas - correos, WhatsApp, Excel",
+      "Relacion compleja con bancos - procesos manuales para emitir/bloquear tarjetas"
+    ],
+    "cares_about": [
+      "Control de tarjetas - reglas por persona, area, horario, comercio",
+      "Prevencion de fraude - detectar y bloquear antes de que ocurra",
+      "Visibilidad de cash flow - saber que se gasto en tiempo real",
+      "Presupuestos dinamicos - ajustar limites sin depender del banco"
+    ],
+    "questions": [
+      "Como controlan el uso de tarjetas corporativas hoy?",
+      "Que tan facil es emitir o bloquear una tarjeta?",
+      "Han tenido casos de uso inapropiado de tarjetas?"
+    ],
+    "objections": {
+      "Ya tenemos tarjetas con el banco": "Mendel complementa: control + software que el banco no ofrece",
+      "No queremos cambiar de banco": "Las tarjetas Mendel son complementarias, no reemplazan la relacion bancaria",
+      "Es un proveedor mas que manejar": "Consolida multiples tarjetas bancarias en una sola plataforma"
+    }
+  },
+  "Contabilidad": {
+    "titles": ["Gerente de Contabilidad", "Contador General", "Accounting Manager", "Lider de Contabilidad"],
+    "role": "Champion - registro contable y deducibilidad",
+    "reports_to": "Controller / CFO",
+    "pains": [
+      "Facturas faltantes - empleados no entregan comprobantes = gasto no deducible",
+      "Captura manual - horas ingresando datos al ERP transaccion por transaccion",
+      "Errores de clasificacion - centro de costo incorrecto, IVA mal calculado",
+      "Perseguir empleados - Ya me mandaste la factura? x 100 empleados",
+      "Cierres estresantes - correr al final del mes para completar informacion"
+    ],
+    "cares_about": [
+      "Deducibilidad - maximizar facturas recuperadas y validadas",
+      "Automatizacion - eliminar captura manual",
+      "Precision - clasificacion correcta desde el origen",
+      "Auditorias tranquilas - todo documentado y trazable"
+    ],
+    "questions": [
+      "Que porcentaje de facturas logran recuperar hoy? (MX)",
+      "Cuanto tiempo dedican a la captura manual de gastos?",
+      "Es frecuente que lleguen a cierre sin comprobantes?"
+    ],
+    "objections": {
+      "Los empleados no van a usar la app": "App sencilla: toma foto, listo. Mas facil que el proceso actual",
+      "Nuestro ERP es muy especifico": "APIs abiertas + conectores para SAP, Oracle, NetSuite, etc.",
+      "Ya tenemos nuestro proceso": "Cuantas horas dedica tu equipo a perseguir facturas?"
+    }
+  },
+  "FPA": {
+    "titles": ["FP&A Manager", "Director de Planeacion Financiera", "Financial Analyst Sr.", "Head of FP&A"],
+    "role": "Influenciador - presupuestos y forecasting",
+    "reports_to": "CFO",
+    "pains": [
+      "Datos llegan tarde - informacion de gastos solo al cierre, no sirve para forecast",
+      "Multiples fuentes - consolidar Excel + banco + ERP = horas de trabajo",
+      "Presupuestos desactualizados - se fijan al inicio del ano, imposible ajustar",
+      "Sin drill-down - sabe que se gasto X, pero no puede ver el detalle rapido"
+    ],
+    "cares_about": [
+      "Datos en tiempo real - gastos actualizados diariamente",
+      "Granularidad - drill-down por area, proyecto, centro de costo",
+      "Presupuestos vivos - ajustar limites segun necesidad del negocio",
+      "Analisis predictivo - detectar tendencias y anomalias"
+    ],
+    "questions": [
+      "Que tan actualizada esta su informacion de gasto para forecast?",
+      "De cuantas fuentes consolidan datos de gastos?",
+      "Pueden ajustar presupuestos en tiempo real?"
+    ],
+    "objections": {
+      "Ya tenemos herramientas de BI": "Mendel alimenta tu BI con datos limpios y en tiempo real",
+      "Solo cubre parte del gasto": "Cubre gastos operativos + viajes, que suelen ser puntos ciegos",
+      "No es mi decision": "Pero es tu dolor; podemos armar business case para CFO"
+    }
+  },
+  "FinanzasOperativas": {
+    "titles": ["Director de Finanzas Operativas", "Gerente de Procesos Financieros", "Finance Operations Manager"],
+    "role": "Champion - rendiciones y reembolsos",
+    "reports_to": "CFO / Controller",
+    "pains": [
+      "Rendiciones por correo/WhatsApp - informacion dispersa, sin trazabilidad",
+      "Reembolsos tardios - empleados molestos, pagan con dinero personal",
+      "Aprobaciones manuales - el jefe tiene que aprobar por correo, se olvida",
+      "Politicas que nadie sigue - existen en PDF pero no se aplican",
+      "Friccion con otras areas - Finanzas siempre retrasa mis gastos"
+    ],
+    "cares_about": [
+      "Digitalizacion - eliminar correos, WhatsApp, Excel",
+      "Flujos automaticos - aprobaciones que fluyen sin intervencion manual",
+      "Experiencia del empleado - que el proceso sea facil para todos",
+      "Politicas que se cumplen - control automatico, no solo documentos"
+    ],
+    "questions": [
+      "Cuanto tiempo tarda un reembolso hoy?",
+      "Como manejan las aprobaciones de gastos?",
+      "Reciben quejas de empleados por el proceso?"
+    ],
+    "objections": {
+      "Los empleados no van a adoptar": "App intuitiva + beneficio directo (reembolsos mas rapidos)",
+      "Nuestras politicas son complejas": "Politicas configurables por area, proyecto, monto, categoria",
+      "Ya tenemos un proceso que funciona": "Cuantas quejas recibes por reembolsos? Cuanto tiempo dedicas a esto?"
+    }
+  },
+  "TravelRRHH": {
+    "titles": ["Travel Manager", "Gerente de Viajes Corporativos", "Director de RR.HH.", "HR Manager"],
+    "role": "Influenciador - viajes corporativos",
+    "reports_to": "CFO / Director de RR.HH.",
+    "pains": [
+      "Reservas dispersas - cada quien reserva por su lado: OTAs, agencias, tarjetas personales",
+      "Politicas que no se cumplen - limite de hotel pero nadie lo respeta",
+      "Falta de datos consolidados - no puede negociar mejores tarifas sin data historica",
+      "Experiencia fragmentada - empleados frustrados con proceso de viajes"
+    ],
+    "cares_about": [
+      "Centralizacion - una plataforma para todo: reservas, politicas, reportes",
+      "Cumplimiento de politicas - que se apliquen automaticamente",
+      "Experiencia del empleado - proceso facil de reserva y rendicion",
+      "Datos para negociar - informacion de gasto consolidada"
+    ],
+    "questions": [
+      "Como aseguran que se cumplan las politicas de viaje?",
+      "Tienen visibilidad consolidada del gasto de viajes?",
+      "Cada quien reserva por su cuenta o hay un proceso?"
+    ],
+    "objections": {
+      "Ya tenemos agencia de viajes": "Mendel complementa: politicas + control + datos que la agencia no da",
+      "Los empleados prefieren reservar solos": "Pueden reservar, pero con politicas automaticas y visibilidad",
+      "Es decision de Finanzas": "Tu sufres el problema; podemos ayudarte a armar el caso"
+    }
+  }
+}
