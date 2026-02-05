@@ -4,7 +4,7 @@ const cors = require('cors');
 const Anthropic = require('@anthropic-ai/sdk');
 
 const { getPersonaContext, getValueProps, getEmailFramework, getICP } = require('./lib/context');
-const { buildEmailPrompt, buildResearchPrompt, buildScoringPrompt } = require('./lib/prompts');
+const { buildEmailPrompt, buildResearchPrompt, buildScoringPrompt, buildCustomPrompt } = require('./lib/prompts');
 
 const app = express();
 app.use(cors());
@@ -22,7 +22,8 @@ app.get('/', (req, res) => {
     endpoints: [
       'POST /api/generate-email',
       'POST /api/research-brief',
-      'POST /api/score-lead'
+      'POST /api/score-lead',
+      'POST /api/generate (flexible - define tu propio output)'
     ]
   });
 });
@@ -224,6 +225,111 @@ app.post('/api/score-lead', async (req, res) => {
 
   } catch (error) {
     console.error('Error scoring lead:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// POST /api/generate
+// Endpoint flexible - define tu propio output
+// ============================================
+app.post('/api/generate', async (req, res) => {
+  try {
+    const {
+      // Contexto del prospecto
+      persona,
+      country,
+      industry,
+      company_name,
+      contact_name,
+      company_size,
+      signal,
+      signals,
+      additional_context,
+      custom_fields,
+
+      // Configuración del output
+      task,             // Instrucción de qué generar (REQUERIDO)
+      output_format,    // "text" | "json" | "markdown" (default: text)
+      max_tokens,       // Límite de tokens (default: 1024)
+      include_context,  // true/false - incluir contexto Mendel (default: true)
+
+      ...extraFields
+    } = req.body;
+
+    // Validación
+    if (!task) {
+      return res.status(400).json({
+        error: 'Campo requerido: task (instrucción de qué generar)',
+        example: 'task: "Genera 3 subject lines para este prospecto"'
+      });
+    }
+
+    // Combinar signals
+    const allSignals = [
+      ...(signal ? [signal] : []),
+      ...(Array.isArray(signals) ? signals : signals ? [signals] : [])
+    ].filter(s => s && s.trim());
+
+    // Combinar campos custom
+    const allCustomFields = {
+      ...(custom_fields || {}),
+      ...extraFields
+    };
+
+    const prompt = buildCustomPrompt({
+      task,
+      output_format: output_format || 'text',
+      include_context: include_context !== false,
+      persona,
+      country,
+      industry,
+      company_name,
+      contact_name,
+      company_size,
+      signals: allSignals,
+      additional_context,
+      custom_fields: Object.keys(allCustomFields).length > 0 ? allCustomFields : null,
+      personaContext: persona ? getPersonaContext(persona) : null,
+      valueProps: country ? getValueProps(country) : null,
+      icp: getICP()
+    });
+
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: max_tokens || 1024,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    const output = message.content[0].text;
+
+    // Si pidieron JSON, intentar parsearlo
+    let result = output;
+    if (output_format === 'json') {
+      try {
+        const jsonMatch = output.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+        if (jsonMatch) {
+          result = JSON.parse(jsonMatch[0]);
+        }
+      } catch {
+        // Si falla el parse, devolver como texto
+      }
+    }
+
+    res.json({
+      success: true,
+      output: result,
+      metadata: {
+        task,
+        output_format: output_format || 'text',
+        persona,
+        country,
+        company_name
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in custom generate:', error);
     res.status(500).json({ error: error.message });
   }
 });
