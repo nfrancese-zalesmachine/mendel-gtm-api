@@ -83,7 +83,7 @@ app.post('/api/generate-email', async (req, res) => {
     });
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-3-5-haiku-20241022',
       max_tokens: 1024,
       messages: [{ role: 'user', content: prompt }]
     });
@@ -139,7 +139,7 @@ app.post('/api/research-brief', async (req, res) => {
     });
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-3-5-haiku-20241022',
       max_tokens: 2048,
       messages: [{ role: 'user', content: prompt }]
     });
@@ -196,7 +196,7 @@ app.post('/api/score-lead', async (req, res) => {
     });
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-3-5-haiku-20241022',
       max_tokens: 1024,
       messages: [{ role: 'user', content: prompt }]
     });
@@ -296,7 +296,7 @@ app.post('/api/generate', async (req, res) => {
     });
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-3-5-haiku-20241022',
       max_tokens: max_tokens || 1024,
       messages: [{ role: 'user', content: prompt }]
     });
