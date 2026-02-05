@@ -14,7 +14,10 @@ const {
   getCompetitors,
   getObjections,
   getCaseStudies,
-  getSignals
+  getSignals,
+  getSalesPlaybook,
+  getProductFeatures,
+  getEmailTemplates
 } = require('./lib/context');
 const { buildEmailPrompt, buildResearchPrompt, buildScoringPrompt, buildCustomPrompt } = require('./lib/prompts');
 
@@ -32,7 +35,7 @@ app.get('/', async (req, res) => {
   res.json({
     status: 'ok',
     service: 'Mendel GTM API',
-    version: '2.1.0',
+    version: '2.2.0',
     database: process.env.SUPABASE_URL ? 'supabase' : 'json-fallback',
     clients: clients.map(c => c.slug),
     endpoints: [
@@ -41,6 +44,9 @@ app.get('/', async (req, res) => {
       'POST /api/score-lead',
       'POST /api/generate (flexible)',
       'GET /api/clients',
+      'GET /api/playbook',
+      'GET /api/features',
+      'GET /api/templates',
       'GET /api/competitors',
       'GET /api/objections',
       'GET /api/case-studies',
@@ -70,6 +76,51 @@ app.get('/api/clients', async (req, res) => {
 app.post('/api/cache/clear', (req, res) => {
   clearCache();
   res.json({ success: true, message: 'Cache cleared' });
+});
+
+// ============================================
+// GET /api/playbook
+// Sales playbook / battlecard
+// ============================================
+app.get('/api/playbook', async (req, res) => {
+  try {
+    const { client } = req.query;
+    const clientSlug = client || 'mendel';
+    const playbook = await getSalesPlaybook(clientSlug);
+    res.json({ success: true, client: clientSlug, playbook });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// GET /api/features
+// Product features with details
+// ============================================
+app.get('/api/features', async (req, res) => {
+  try {
+    const { client, slug } = req.query;
+    const clientSlug = client || 'mendel';
+    const features = await getProductFeatures(clientSlug, slug);
+    res.json({ success: true, client: clientSlug, features });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// GET /api/templates
+// Email templates and follow-up sequences
+// ============================================
+app.get('/api/templates', async (req, res) => {
+  try {
+    const { client, type } = req.query;
+    const clientSlug = client || 'mendel';
+    const templates = await getEmailTemplates(clientSlug, type);
+    res.json({ success: true, client: clientSlug, templates });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // ============================================
