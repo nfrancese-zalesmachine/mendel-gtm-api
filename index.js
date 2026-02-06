@@ -35,7 +35,7 @@ app.get('/', async (req, res) => {
   res.json({
     status: 'ok',
     service: 'Mendel GTM API',
-    version: '2.3.0',
+    version: '2.4.0',
     database: process.env.SUPABASE_URL ? 'supabase' : 'json-fallback',
     clients: clients.map(c => c.slug),
     endpoints: [
@@ -202,6 +202,7 @@ app.post('/api/generate-email', async (req, res) => {
       signals,        // triggers detectados - array (opcional)
       additional_context, // info extra del prospecto (opcional)
       custom_fields,  // campos personalizados de Clay (opcional)
+      language,       // idioma del output: es (default), en, fr, it, de
       ...extraFields  // cualquier otro campo se captura aquí
     } = req.body;
 
@@ -244,6 +245,7 @@ app.post('/api/generate-email', async (req, res) => {
       signals: allSignals,
       additional_context,
       custom_fields: Object.keys(allCustomFields).length > 0 ? allCustomFields : null,
+      language: language || 'es',
       personaContext,
       valueProps,
       emailFramework,
@@ -439,6 +441,7 @@ app.post('/api/generate', async (req, res) => {
       output_format,    // "text" | "json" | "markdown" (default: text)
       max_tokens,       // Límite de tokens (default: 1024)
       include_context,  // true/false - incluir contexto Mendel (default: true)
+      language,         // idioma del output: es (default), en, fr, it, de
 
       ...extraFields
     } = req.body;
@@ -476,6 +479,7 @@ app.post('/api/generate', async (req, res) => {
       task,
       output_format: output_format || 'text',
       include_context: include_context !== false,
+      language: language || 'es',
       persona,
       country,
       industry,
@@ -543,6 +547,7 @@ app.post('/api/snippet', async (req, res) => {
       // Tipo de snippet
       snippet_type,    // standard (default), opener, signal_hook, case_study, cta, ps_line
       task,            // Instrucción específica (opcional)
+      language,        // idioma del output: es (default), en, fr, it, de
 
       // Contexto del prospecto
       persona,
@@ -585,6 +590,7 @@ app.post('/api/snippet', async (req, res) => {
     const prompt = buildSnippetPrompt({
       task,
       snippet_type: snippet_type || 'standard',
+      language: language || 'es',
       persona,
       country,
       industry,
